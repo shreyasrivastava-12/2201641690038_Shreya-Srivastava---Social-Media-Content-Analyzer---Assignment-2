@@ -4,6 +4,9 @@ node_modules/
 # Production build
 build/
 
+# vercel
+.vercel
+
 # Environment variables
 .env
 .env.local
