@@ -45,7 +45,7 @@ https://2201641690038-shreya-srivastava-soc.vercel.app
 2. **Wait**: Text extraction happens automatically
 3. **Analyze**: AI analysis starts automatically after extraction
 4. **Review**: See analysis results and suggestions
-5. **New Analysis**: Click "🔄 Analyze Another Post" for new content
+5. **New Analysis**: Click "Analyze Another Post" for new content
 
 ## Tech Stack
 
