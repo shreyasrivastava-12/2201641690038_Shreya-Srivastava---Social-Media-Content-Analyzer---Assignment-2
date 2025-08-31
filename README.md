@@ -2,6 +2,9 @@
 
 A React.js application that analyzes social media content using AI. Upload PDFs or images to extract text and get AI-powered analysis and improvement suggestions.
 
+# Deployed Link
+https://2201641690038-shreya-srivastava-soc.vercel.app
+
 ## Features
 
 - **File Upload**: Drag & drop or click to upload PDFs and images
