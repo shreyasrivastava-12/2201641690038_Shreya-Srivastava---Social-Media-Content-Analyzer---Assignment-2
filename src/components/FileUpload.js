@@ -4,7 +4,7 @@ import Tesseract from 'tesseract.js';
 import geminiService from '../services/geminiService';
 import './FileUpload.css';
 
-// Set worker source to use local worker file
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 const FileUpload = () => {
@@ -25,7 +25,7 @@ const FileUpload = () => {
     'image/webp'
   ];
 
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
+  const maxFileSize = 10 * 1024 * 1024;
 
   const validateFile = (file) => {
     if (!allowedTypes.includes(file.type)) {
@@ -113,6 +113,7 @@ const FileUpload = () => {
   };
 
   const handleFileSelect = (selectedFiles) => {
+    console.log('handleFileSelect called with:', selectedFiles);
     const newFiles = Array.from(selectedFiles).map(file => {
       const validation = validateFile(file);
       return {
@@ -180,7 +181,10 @@ const FileUpload = () => {
       }
     });
 
-    setFiles(prev => [...prev, ...newFiles]);
+    setFiles(prev => {
+      console.log('Adding new files to state:', newFiles);
+      return [...prev, ...newFiles];
+    });
   };
 
   const handleDragOver = useCallback((e) => {
@@ -202,11 +206,29 @@ const FileUpload = () => {
 
   const handleFileInputChange = (e) => {
     const selectedFiles = e.target.files;
-    handleFileSelect(selectedFiles);
+    console.log('File input change detected:', selectedFiles);
+    if (selectedFiles && selectedFiles.length > 0) {
+      handleFileSelect(selectedFiles);
+      // Reset the file input to allow selecting the same file again
+      e.target.value = '';
+    }
   };
 
   const removeFile = (fileId) => {
     setFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
+  const analyzeAnotherPost = () => {
+    setFiles([]);
+    setUploadProgress({});
+    setExtractionProgress({});
+    setGeminiAnalysis({});
+    setIsAnalyzing({});
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      // Automatically open file selection dialog
+      fileInputRef.current.click();
+    }
   };
 
   const simulateUpload = (fileId) => {
@@ -232,12 +254,7 @@ const FileUpload = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getFileIcon = (type) => {
-    if (type === 'application/pdf') {
-      return '📄';
-    }
-    return '🖼️';
-  };
+
 
   const analyzeWithGemini = async (fileId, extractedText, fileName) => {
     if (!extractedText) return;
@@ -298,37 +315,52 @@ const FileUpload = () => {
 
   return (
     <div className="file-upload-container">
-      <div 
-        className={`upload-area ${isDragOver ? 'drag-over' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <div className="upload-content">
-          <div className="upload-icon">📁</div>
-          <h3>Drag & Drop files here</h3>
-          <p>or click to browse</p>
-          <p className="file-types">Supported: PDF, JPG, PNG, GIF, WEBP (Max: 10MB)</p>
-          <p className="text-extraction-info">📝 Text will be automatically extracted and analyzed with Gemini AI</p>
+      {files.length === 0 ? (
+        <div 
+          className={`upload-area ${isDragOver ? 'drag-over' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => {
+            console.log('Upload area clicked, opening file dialog...');
+            if (fileInputRef.current) {
+              fileInputRef.current.click();
+            }
+          }}
+        >
+          <div className="upload-content">
+            <div className="upload-icon">📁</div>
+            <h3>Drag & Drop files here</h3>
+            <p>or click to browse</p>
+            <p className="file-types">Supported: PDF, JPG, PNG, GIF, WEBP (Max: 10MB)</p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+          />
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
-          onChange={handleFileInputChange}
-          style={{ display: 'none' }}
-        />
-      </div>
+      ) : (
+        <div className="analyze-another-section">
+          <button 
+            className="analyze-another-btn large"
+            onClick={analyzeAnotherPost}
+          >
+            Analyze Another Post
+          </button>
+        </div>
+      )}
 
       {files.length > 0 && (
         <div className="files-list">
-          <h3>Uploaded Files ({files.length})</h3>
+          <div className="files-header">
+          </div>
           {files.map((fileObj) => (
             <div key={fileObj.id} className={`file-item ${fileObj.valid ? 'valid' : 'invalid'}`}>
               <div className="file-info">
-                <div className="file-icon">{getFileIcon(fileObj.type)}</div>
                 <div className="file-details">
                   <h4>{fileObj.name}</h4>
                   <p>{formatFileSize(fileObj.size)} • {fileObj.type}</p>
@@ -339,24 +371,6 @@ const FileUpload = () => {
               
               {fileObj.valid && (
                 <div className="file-actions">
-                  {uploadProgress[fileObj.id] !== undefined ? (
-                    <div className="upload-progress">
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ width: `${uploadProgress[fileObj.id]}%` }}
-                        ></div>
-                      </div>
-                      <span>{Math.round(uploadProgress[fileObj.id])}%</span>
-                    </div>
-                  ) : (
-                    <button 
-                      className="upload-btn"
-                      onClick={() => simulateUpload(fileObj.id)}
-                    >
-                      Upload
-                    </button>
-                  )}
                   <button 
                     className="remove-btn"
                     onClick={() => removeFile(fileObj.id)}
@@ -375,7 +389,7 @@ const FileUpload = () => {
               {/* Gemini Analysis Results */}
               {fileObj.geminiAnalysis && (
                 <div className="gemini-analysis">
-                  <h4>🤖 Gemini AI Analysis</h4>
+                  <h4>Gemini AI Analysis</h4>
                   {fileObj.geminiAnalysis.success ? (
                     <div className="analysis-content">
                       <pre>{fileObj.geminiAnalysis.analysis}</pre>

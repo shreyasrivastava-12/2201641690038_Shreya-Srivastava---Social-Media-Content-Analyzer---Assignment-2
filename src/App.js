@@ -6,8 +6,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>File Upload</h1>
-        <p>Upload your PDFs and images easily</p>
+        <h1>Social Media Content Analyzer</h1>
+        <p>Analyzes social media posts and suggests engagement improvements</p>
       </header>
       <main>
         <FileUpload />
